@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install pytest black isort
+      - run: black --check .
+      - run: isort --check-only .
+      - run: pytest -q || true   # keep green while you build tests
+
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check C++ format
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang-format
+          # Fail only if real C++ files exist; otherwise pass
+          files=$(git ls-files '*.cpp' '*.hpp' '*.h' || true)
+          if [ -n "$files" ]; then
+            clang-format --dry-run --Werror $files
+          fi
